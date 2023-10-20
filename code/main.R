@@ -1,14 +1,17 @@
 library(tidyverse)
-library(dplyr)
 library(haven)
 library(psych)
 library(fastDummies)
 library(vars)
 library(lpirfs)
-library(xtable)
+library(vtable)
 library(stargazer)
+library(Hmisc)
 
-raw_data1 <- haven::read_dta("data/masterdata_annual.dta")
+#####
+# table 1
+
+raw_data1 <- haven::read_dta("../data/masterdata_annual.dta")
 
 data1 <- raw_data1 %>% 
   tidyr::drop_na(c(lnGDP_Fd3, L1D3HHD_GDP, L1D3NFD_GDP)) %>% 
@@ -48,20 +51,52 @@ data1 <- raw_data1 %>%
     L1toL3hys
   )
 
+table1 <- psych::describe(data1[,c(1:30, 32)]) %>% 
+  data.frame() %>% 
+  dplyr::select(n, mean, median, sd) %>% 
+  dplyr::rename(N = n,
+                Mean = mean,
+                Median = median,
+                `Std. dev.` = sd) 
+sd_deltay <- table1$`Std. dev.`[1] 
+table1 <- table1 %>% 
+  mutate(`Std. dev./Std. dev. (Delta y)` = `Std. dev.` / sd_deltay)
 
-data2 <- read.csv("data/VAR3_levels_fixedeffects_IVprctiles.csv")
+
+#####
+# figure 2
+
+data2 <- read.csv("../data/VAR3_levels_fixedeffects_IVprctiles.csv", header = FALSE)
+source("../code/var.R")
+
+p <- 5
+lag_max <- 11
+index_y <- c(7, 8, 9)
+index_x <- 10:ncol(data2)
 
 p <- 5
 lag_max <-  10
 index_y <- c(7, 8, 9)
 index_x <- 10:ncol(data2)
 
-amat <- diag(3)
-amat[2,1] <- NA
-amat[3,1] <- NA
-amat[3,2] <- NA
+var_model <- main_VAR(data2, index_y, index_x)
+var_bc <- chol_VAR(var_model)
 
-var_model <- vars::VAR(data2[index_y], p = p, type = "const", exogen = data2[index_x], lag.max = lag_max)
-svar_model <- vars::SVAR(var_model, estmethod = "scoring", Amat = amat, Bmat = NULL, hessian = TRUE, method="BFGS")
-irf1 <- vars::irf(svar_model, boot = TRUE)
-fig1 <- plot(irf1)
+g1 <- plot_irf(var_bc$cholIRF[,1,1]) + 
+  ylim(c(-0.2, 1.8)) +
+  labs(title = expression(paste(d^{HH}, "->", d^{HH})))
+
+g2 <- plot_irf(var_bc$cholIRF[,3,1]) +
+  ylim(c(-0.8, 0.6)) +
+  labs(title = expression(paste(d^{HH}, "->", y)))
+
+g3 <- plot_irf(var_bc$cholIRF[,3,2]) +
+  ylim(c(-0.5, 0.4)) +
+  labs(title = expression(paste(d^{F}, "->", y)))
+
+ggsave("../figure/Figure1_1.png", g1, width = 5, height = 6)
+ggsave("../figure/Figure1_2.png", g2, width = 5, height = 6)
+ggsave("../figure/Figure1_3.png", g3, width = 5, height = 6)
+
+
+       
