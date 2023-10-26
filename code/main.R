@@ -1,21 +1,23 @@
+#####
+# set up
 library(tidyverse)
 library(haven)
-library(psych)
-library(fastDummies)
 library(vars)
-library(lpirfs)
-library(vtable)
+library(psych)
 library(stargazer)
-library(Hmisc)
+library(patchwork)
+library(fixest)
+
+path <- getwd()
 
 #####
 # table 1
-
-raw_data1 <- haven::read_dta("../data/masterdata_annual.dta")
+raw_data1 <- haven::read_dta(paste(path, "data/masterdata_annual.dta", sep = "/"))
 
 data1 <- raw_data1 %>% 
   tidyr::drop_na(c(lnGDP_Fd3, L1D3HHD_GDP, L1D3NFD_GDP)) %>% 
   dplyr::select(
+    c,
     lnGDP_d1,                #\Delta y                            : log real GDP
     lnGDP_Fd3,               #\Delta_{3}y                         : 
     D1PD_GDP,                #\Delta d^{Private}                  : private nonfinancial debt to GDP
@@ -51,7 +53,7 @@ data1 <- raw_data1 %>%
     L1toL3hys
   )
 
-table1 <- psych::describe(data1[,c(1:30, 32)]) %>% 
+table1 <- psych::describe(data1[,c(2:31, 33)]) %>% 
   data.frame() %>% 
   dplyr::select(n, mean, median, sd) %>% 
   dplyr::rename(N = n,
@@ -60,43 +62,44 @@ table1 <- psych::describe(data1[,c(1:30, 32)]) %>%
                 `Std. dev.` = sd) 
 sd_deltay <- table1$`Std. dev.`[1] 
 table1 <- table1 %>% 
-  mutate(`Std. dev./Std. dev. (Delta y)` = `Std. dev.` / sd_deltay)
+  dplyr::mutate(`Std. dev./Std. dev. (Delta y)` = `Std. dev.` / sd_deltay)
 
 
 #####
-# figure 2
+# figure 1
 
-data2 <- read.csv("../data/VAR3_levels_fixedeffects_IVprctiles.csv", header = FALSE)
-source("../code/var.R")
-
-p <- 5
-lag_max <- 11
-index_y <- c(7, 8, 9)
-index_x <- 10:ncol(data2)
+data2 <- read.csv("data/VAR3_levels_fixedeffects_IVprctiles.csv", header = FALSE)
+source("code/functions.R")
 
 p <- 5
 lag_max <-  10
 index_y <- c(7, 8, 9)
 index_x <- 10:ncol(data2)
+nboot <- 2000
+clevel <- 95
 
 var_model <- main_VAR(data2, index_y, index_x)
-var_bc <- chol_VAR(var_model)
+var_bias_corrected <- correct_bias(var_model)
+var_bc <- chol_VAR(var_bias_corrected)
+var_bs_bc <- wild_bootstrap(var_bc, nboot = nboot, clevel = clevel)
 
-g1 <- plot_irf(var_bc$cholIRF[,1,1]) + 
-  ylim(c(-0.2, 1.8)) +
-  labs(title = expression(paste(d^{HH}, "->", d^{HH})))
+g1 <- plot_irf(var_bc$cholIRF[,1,1], var_bs_bc$CholirsH1[,1,1], var_bs_bc$CholirsL1[,1,1]) +
+  ggplot2::ylim(c(-0.2, 1.8)) +
+  ggplot2::labs(title = expression(paste(d^{HH}, "->", d^{HH})))
 
-g2 <- plot_irf(var_bc$cholIRF[,3,1]) +
-  ylim(c(-0.8, 0.6)) +
-  labs(title = expression(paste(d^{HH}, "->", y)))
+g2 <- plot_irf(var_bc$cholIRF[,3,1], var_bs_bc$CholirsH1[,3,1], var_bs_bc$CholirsL1[,3,1]) +
+  ggplot2::ylim(c(-0.8, 0.6)) +
+  ggplot2::labs(title = expression(paste(d^{HH}, "->", y)))
 
-g3 <- plot_irf(var_bc$cholIRF[,3,2]) +
-  ylim(c(-0.5, 0.4)) +
-  labs(title = expression(paste(d^{F}, "->", y)))
+g3 <- plot_irf(var_bc$cholIRF[,3,2], var_bs_bc$CholirsH1[,3,2], var_bs_bc$CholirsL1[,3,2]) +
+  ggplot2::ylim(c(-0.5, 0.4)) +
+  ggplot2::labs(title = expression(paste(d^{F}, "->", y)))
 
 ggsave("../figure/Figure1_1.png", g1, width = 5, height = 6)
 ggsave("../figure/Figure1_2.png", g2, width = 5, height = 6)
 ggsave("../figure/Figure1_3.png", g3, width = 5, height = 6)
 
-
-       
+#####
+# table 2
+result1 <- fixest::feols(lnGDP_d1 ~ D3HHD_GDP + D3NFD_GDP | c,
+                         data = raw_data1)
