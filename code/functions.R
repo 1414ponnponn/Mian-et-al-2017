@@ -269,3 +269,12 @@ plot_irf <- function(vec_irf, vec_hci, vec_lci){
     ggplot2::geom_line(aes(x = t, y = hci), col = "red", linetype = "dashed") +
     ggplot2::geom_line(aes(x = t, y = lci), col = "red", linetype = "dashed")
 }
+
+regress_lagged_y <- function(data, i){
+  data <- data %>% 
+    group_by(c) %>% 
+    mutate(lnGDP_d3_lagged = dplyr::lead(lnGDP_d3, i, order_by = c))
+  result <- fixest::feols(lnGDP_d3_lagged ~ D3HHD_GDP + D3NFD_GDP | c,
+                          data = data)
+  return(result)
+}
