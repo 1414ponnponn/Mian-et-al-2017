@@ -7,14 +7,14 @@ library(psych)
 library(stargazer)
 library(patchwork)
 library(fixest)
-library(plm)
 library(modelsummary)
-
-path <- getwd()
+library(sandwich)
+raw_data1 <- haven::read_dta("data/masterdata_annual.dta")
+data2 <- read.csv("data/VAR3_levels_fixedeffects_IVprctiles.csv", header = FALSE)
+source("code/functions.R")
 
 #####
 # table 1
-raw_data1 <- haven::read_dta(paste(path, "data/masterdata_annual.dta", sep = "/"))
 
 data1 <- raw_data1 %>% 
   tidyr::drop_na(c(lnGDP_Fd3, L1D3HHD_GDP, L1D3NFD_GDP)) %>% 
@@ -70,9 +70,6 @@ table1 <- table1 %>%
 #####
 # figure 1
 
-data2 <- read.csv("data/VAR3_levels_fixedeffects_IVprctiles.csv", header = FALSE)
-source("code/functions.R")
-
 p <- 5
 lag_max <-  10
 index_y <- c(7, 8, 9)
@@ -97,68 +94,69 @@ g3 <- plot_irf(var_bc$cholIRF[,3,2], var_bs_bc$CholirsH1[,3,2], var_bs_bc$Cholir
   ggplot2::ylim(c(-0.5, 0.4)) +
   ggplot2::labs(title = expression(paste(d^{F}, "->", y)))
 
-ggsave("../figure/Figure1_1.png", g1, width = 5, height = 6)
-ggsave("../figure/Figure1_2.png", g2, width = 5, height = 6)
-ggsave("../figure/Figure1_3.png", g3, width = 5, height = 6)
+ggsave("figure/Figure1_1.png", g1, width = 5, height = 6)
+ggsave("figure/Figure1_2.png", g2, width = 5, height = 6)
+ggsave("figure/Figure1_3.png", g3, width = 5, height = 6)
 
 #####
 # table 2
-result1_1 <- regress_lagged_y(raw_data1, 0)
-result1_2 <- regress_lagged_y(raw_data1, 1)
-result1_3 <- regress_lagged_y(raw_data1, 2)
-result1_4 <- regress_lagged_y(raw_data1, 3)
-result1_5 <- regress_lagged_y(raw_data1, 4)
-result1_6 <- regress_lagged_y(raw_data1, 5)
-result1_7 <- regress_lagged_y(raw_data1, 6)
+result2_1 <- regress_lagged_y(raw_data1, 0)
+result2_2 <- regress_lagged_y(raw_data1, 1)
+result2_3 <- regress_lagged_y(raw_data1, 2)
+result2_4 <- regress_lagged_y(raw_data1, 3)
+result2_5 <- regress_lagged_y(raw_data1, 4)
+result2_6 <- regress_lagged_y(raw_data1, 5)
+result2_7 <- regress_lagged_y(raw_data1, 6)
 
 rows <- dplyr::tribble(
-  ~term, ~result1_1, ~result1_2, ~result1_3, ~result1_4, ~result1_5, ~result1_6, ~result1_7,
-  "Country fixed effect", "✓", "✓", "✓", "✓", "✓", "✓", "✓"
+  ~term, ~result2_1, ~result2_2, ~result2_3, ~result2_4, ~result2_5, ~result2_6, ~result2_7,
+  "Country fixed effects", "✓", "✓", "✓", "✓", "✓", "✓", "✓"
 )
 attr(rows, "position") <- 5
 
 table2 <- modelsummary:::modelsummary(
   list(
-    result1_1, result1_2, result1_3, result1_4, result1_5, result1_6, result1_7
+    result2_1, result2_2, result2_3, result2_4, result2_5, result2_6, result2_7
   ),
   stars = TRUE,
   gof_map = c("r2.within", "nobs", "FE:c", "FE:year"),
-  add_rows = rows
+  add_rows = rows,
+  vcov = ~ year + CountryCode
 )
 
 #####
 # table 3
-result2_1 <- fixest::feols(lnGDP_Fd3 ~ L1D3PD_GDP | CountryCode, 
+result3_1 <- fixest::feols(lnGDP_Fd3 ~ L1D3PD_GDP | CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_2 <- fixest::feols(lnGDP_Fd3 ~ L1D3HHD_GDP | CountryCode, 
+result3_2 <- fixest::feols(lnGDP_Fd3 ~ L1D3HHD_GDP | CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_3 <- fixest::feols(lnGDP_Fd3 ~ L1D3NFD_GDP | CountryCode, 
+result3_3 <- fixest::feols(lnGDP_Fd3 ~ L1D3NFD_GDP | CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_4 <- fixest::feols(lnGDP_Fd3 ~ L1D3HHD_GDP + L1D3NFD_GDP | CountryCode, 
+result3_4 <- fixest::feols(lnGDP_Fd3 ~ L1D3HHD_GDP + L1D3NFD_GDP | CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_5 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+result3_5 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
                              CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_6 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3GD_GDP_Sol2 |
+result3_6 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3GD_GDP_Sol2 |
                              CountryCode, 
                            data = raw_data1 %>% 
                              tidyr::drop_na(L1D3NFD_GDP) %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_7 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3NFL_GDP |
+result3_7 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3NFL_GDP |
                              CountryCode, 
                            data = raw_data1 %>% 
                              dplyr::filter(mainsmp1 == 1))
-result2_8 <- fixest::feols(lnGDP_Fd3 ~  L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3NFLpos + L1D3NFLposXL1D3HHD_GDP|
+result3_8 <- fixest::feols(lnGDP_Fd3 ~  L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + L1D3NFLpos + L1D3NFLposXL1D3HHD_GDP|
                              CountryCode,
                            data = raw_data1 %>% 
                              dplyr::filter(mainsmp1 == 1) %>% 
@@ -168,18 +166,196 @@ result2_8 <- fixest::feols(lnGDP_Fd3 ~  L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L
                                     L1D3NFLposXL1D3HHD_GDP = L1D3NFLpos * L1D3HHD_GDP))
 
 rows <- dplyr::tribble(
-  ~term, ~result2_1, ~result2_2, ~result2_3, ~result2_4, ~result2_5, ~result2_6, ~result2_7, ~result2_8,
-  "Country fixed effect", "✓", "✓", "✓", "✓", "✓", "✓", "✓", "✓",
+  ~term, ~result3_1, ~result3_2, ~result3_3, ~result3_4, ~result3_5, ~result3_6, ~result3_7, ~result3_8,
+  "Country fixed effects", "✓", "✓", "✓", "✓", "✓", "✓", "✓", "✓",
   "Distributed lag in diff log GDP", "", "", "", "", "✓", "✓", "✓", "✓"
 )
 attr(rows, "position") <- c(15, 16)
 
 table3 <- modelsummary:::modelsummary(
   list(
-    result2_1, result2_2, result2_3, result2_4, result2_5, result2_6, result2_7, result2_8
+    result3_1, result3_2, result3_3, result3_4, result3_5, result3_6, result3_7, result3_8
   ),
   stars = TRUE,
   coef_omit = ".*lnGDP_d1",
   gof_map = c("r2.within", "nobs"),
-  add_rows = rows
+  add_rows = rows,
+  vcov = ~ year + CountryCode
+)
+
+#####
+# table 4a
+result4a_1 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d3 + L1D3HHD_GDP + L1D3NFD_GDP |
+                             CountryCode, 
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             dplyr::filter(mainsmp1 == 1,
+                                           year %% 3 == 1))
+# result4a_2 <- fixest::feols(lnGDP_Fd3 ~ lnGDP_d3 |
+#                              L1D3HHD_GDP + L1D3NFD_GDP ~ L4D3HHD_GDP + L4D3NFD_GDP,
+#                            data = raw_data1 %>% 
+#                              dplyr::mutate(L4D3HHD_GDP = dplyr::lag(L1D3HHD_GDP, 3),
+#                                            L4D3NFD_GDP = dplyr::lag(L1D3NFD_GDP, 3)) %>% 
+#                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+#                              dplyr::filter(mainsmp1 == 1,
+#                                            year %% 3 == 1)) #incorrect result
+result4a_3 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP, 
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             dplyr::filter(mainsmp1 == 1))
+# skip result4a_4 
+result4a_5 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + year |
+                             CountryCode, 
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             dplyr::filter(mainsmp1 == 1))
+result4a_6 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                             year + CountryCode, 
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             dplyr::filter(mainsmp1 == 1))
+result4a_7 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_L3GDP + L1D3NFD_L3GDP |
+                             CountryCode, 
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             dplyr::filter(mainsmp1 == 1))
+
+rows <- dplyr::tribble(
+  ~term, ~result4a_1, ~result4a_3, ~result4a_5, ~result4a_6, ~result4a_7,
+  "Country fixed effects", "✓", "", "✓", "✓", "✓", 
+  "Distributed lag in diff log GDP", "✓", "✓", "✓", "✓", "✓", 
+  "Year fixes effects", "", "", "", "✓", ""
+)
+attr(rows, "position") <- c(11:13)
+
+table4a <- modelsummary:::modelsummary(
+  list(
+    result4a_1, result4a_3, result4a_5, result4a_6, result4a_7
+  ),
+  stars = TRUE,
+  coef_omit = c(1, 4:7),
+  gof_map = c("r2.within", "nobs"),
+  add_rows = rows,
+  vcov = ~ year + CountryCode
+)
+
+# table 4b
+result4b_1 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                              CountryCode, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            emergingdummy == 0))
+result4b_2 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                              CountryCode, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            emergingdummy == 1))
+result4b_3 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                              CountryCode, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            year <= 1992))
+result4b_4 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                              CountryCode, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            year <= 2003))
+result4b_5 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP + year |
+                              CountryCode, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            year <= 2003))
+result4b_6 <- fixest::feols(lnGDP_Fd3 ~ L1lnGDP_d1 + L2lnGDP_d1 + L3lnGDP_d1 + L1D3HHD_GDP + L1D3NFD_GDP |
+                              CountryCode + year, 
+                            data = raw_data1 %>% 
+                              tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                              dplyr::filter(mainsmp1 == 1,
+                                            year <= 2003))
+
+rows <- dplyr::tribble(
+  ~term, ~result4b_1, ~result4b_2, ~result4b_3, ~result4b_4, ~result4b_5, ~result4b_6,
+  "Country fixed effects", "✓", "✓", "✓", "✓", "✓", "✓", 
+  "Distributed lag in diff log GDP", "✓", "✓", "✓", "✓", "✓", "✓", 
+  "Year fixed effects", "", "", "", "", "", "✓", 
+)
+attr(rows, "position") <- c(7:9)
+
+table4b <- modelsummary:::modelsummary(
+  list(
+    result4b_1, result4b_2, result4b_3, result4b_4, result4b_5, result4b_6
+  ),
+  stars = TRUE,
+  coef_omit = ".*lnGDP_d1",
+  gof_map = c("r2.within", "nobs"),
+  add_rows = rows,
+  vcov = ~ year + CountryCode
+)
+
+#####  
+# table 5
+result5_1 <- fixest::feols(hhC_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_2 <- fixest::feols(hhCnondur_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_3 <- fixest::feols(hhCdur_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_4 <- fixest::feols(hhCservices_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_5 <- fixest::feols(I_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_6 <- fixest::feols(NX_ifs_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_7 <- fixest::feols(CA_GDP_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_8 <- fixest::feols(s_Imc_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+result5_9 <- fixest::feols(s_Xc_d1 ~ D1HHD_GDP + D1NFD_GDP |
+                             CountryCode,
+                           data = raw_data1 %>% 
+                             tidyr::drop_na(lnGDP_Fd3, L1D3NFD_GDP) %>% 
+                             filter(mainsmp1 == 1))
+
+rows <- dplyr::tribble(
+  ~term, ~result5_1, ~result5_2, ~result5_3, ~result5_4, ~result5_5, ~result5_6, ~result5_7, ~result5_8, ~result5_9,
+  "Country fixed effects", "✓", "✓", "✓", "✓", "✓", "✓", "✓", "✓", "✓"
+)
+attr(rows, "position") <- 5
+
+table5 <- modelsummary::modelsummary(
+  list(
+    result5_1, result5_2, result5_3, result5_4, result5_5, result5_6, result5_7, result5_8, result5_9
+  ),
+  stars = TRUE,
+  gof_map = c("r2.within", "nobs"),
+  add_rows = rows,
+  vcov = ~ year + CountryCode
 )
