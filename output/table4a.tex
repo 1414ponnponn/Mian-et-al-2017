@@ -1,0 +1,26 @@
+\begin{table}
+\centering
+\begin{tabular}[t]{lccccc}
+\toprule
+  & (1) & (2) & (3) & (4) & (5)\\
+\midrule
+L1D3HHD\_GDP & \num{-0.319}*** & \num{-0.312}*** & \num{-0.226}** & \num{-0.212}** & \\
+ & (\num{0.084}) & (\num{0.087}) & (\num{0.077}) & (\num{0.064}) & \\
+L1D3NFD\_GDP & \num{-0.057} & \num{-0.063} & \num{-0.042} & \num{-0.037} & \\
+ & (\num{0.046}) & (\num{0.045}) & (\num{0.034}) & (\num{0.033}) & \\
+year &  &  & \num{-0.228}** &  & \\
+ &  &  & (\num{0.065}) &  & \\
+L1D3HHD\_L3GDP &  &  &  &  & \num{-0.298}***\\
+ &  &  &  &  & (\num{0.071})\\
+L1D3NFD\_L3GDP &  &  &  &  & \num{0.020}\\
+ &  &  &  &  & (\num{0.035})\\
+\midrule
+Country fixed effects & ✓ &  & ✓ & ✓ & ✓\\
+Distributed lag in diff log GDP & ✓ & ✓ & ✓ & ✓ & ✓\\
+Year fixes effects &  &  &  & ✓ & \\
+R2 Within & \num{0.154} &  & \num{0.263} & \num{0.099} & \num{0.152}\\
+Num.Obs. & \num{233} & \num{695} & \num{695} & \num{695} & \num{695}\\
+\bottomrule
+\multicolumn{6}{l}{\rule{0pt}{1em}+ p $<$ 0.1, * p $<$ 0.05, ** p $<$ 0.01, *** p $<$ 0.001}\\
+\end{tabular}
+\end{table}

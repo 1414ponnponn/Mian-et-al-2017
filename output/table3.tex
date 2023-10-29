@@ -1,0 +1,29 @@
+\begin{table}
+\centering
+\begin{tabular}[t]{lcccccccc}
+\toprule
+  & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8)\\
+\midrule
+L1D3PD\_GDP & \num{-0.119}*** &  &  &  &  &  &  & \\
+ & (\num{0.032}) &  &  &  &  &  &  & \\
+L1D3HHD\_GDP &  & \num{-0.366}*** &  & \num{-0.337}*** & \num{-0.333}*** & \num{-0.340}*** & \num{-0.325}*** & \num{-0.193}+\\
+ &  & (\num{0.079}) &  & (\num{0.079}) & (\num{0.079}) & (\num{0.089}) & (\num{0.086}) & (\num{0.098})\\
+L1D3NFD\_GDP &  &  & \num{-0.098}* & \num{-0.041} & \num{-0.046} & \num{-0.023} & \num{-0.052} & \num{-0.050}\\
+ &  &  & (\num{0.040}) & (\num{0.036}) & (\num{0.036}) & (\num{0.045}) & (\num{0.040}) & (\num{0.039})\\
+L1D3GD\_GDP\_Sol2 &  &  &  &  &  & \num{0.053} &  & \\
+ &  &  &  &  &  & (\num{0.044}) &  & \\
+L1D3NFL\_GDP &  &  &  &  &  &  & \num{0.008} & \\
+ &  &  &  &  &  &  & (\num{0.053}) & \\
+L1D3NFLposTRUE &  &  &  &  &  &  &  & \num{0.813}\\
+ &  &  &  &  &  &  &  & (\num{1.010})\\
+L1D3NFLposXL1D3HHD\_GDP &  &  &  &  &  &  &  & \num{-0.233}\\
+ &  &  &  &  &  &  &  & (\num{0.143})\\
+\midrule
+Country fixed effects & ✓ & ✓ & ✓ & ✓ & ✓ & ✓ & ✓ & ✓\\
+Distributed lag in diff log GDP &  &  &  &  & ✓ & ✓ & ✓ & ✓\\
+R2 Within & \num{0.087} & \num{0.123} & \num{0.036} & \num{0.128} & \num{0.131} & \num{0.126} & \num{0.168} & \num{0.180}\\
+Num.Obs. & \num{695} & \num{695} & \num{695} & \num{695} & \num{695} & \num{627} & \num{636} & \num{636}\\
+\bottomrule
+\multicolumn{9}{l}{\rule{0pt}{1em}+ p $<$ 0.1, * p $<$ 0.05, ** p $<$ 0.01, *** p $<$ 0.001}\\
+\end{tabular}
+\end{table}
