@@ -2,6 +2,7 @@
 # set up
 library(tidyverse)
 library(haven)
+library(latex2exp)
 library(vars)
 library(psych)
 library(stargazer)
@@ -82,21 +83,27 @@ var_bias_corrected <- correct_bias(var_model)
 var_bc <- chol_VAR(var_bias_corrected)
 var_bs_bc <- wild_bootstrap(var_bc, nboot = nboot, clevel = clevel)
 
-g1 <- plot_irf(var_bc$cholIRF[,1,1], var_bs_bc$CholirsH1[,1,1], var_bs_bc$CholirsL1[,1,1]) +
+g1_1 <- plot_irf(var_bc$cholIRF[,1,1], var_bs_bc$CholirsH1[,1,1], var_bs_bc$CholirsL1[,1,1]) +
   ggplot2::ylim(c(-0.2, 1.8)) +
-  ggplot2::labs(title = expression(paste(d^{HH}, "->", d^{HH})))
+  ggplot2::labs(title = latex2exp::TeX("$d^{HH} \\rightarrow d^{HH}$"),
+                x = "Years after impulse",
+                y = NULL)
 
-g2 <- plot_irf(var_bc$cholIRF[,3,1], var_bs_bc$CholirsH1[,3,1], var_bs_bc$CholirsL1[,3,1]) +
+g1_2 <- plot_irf(var_bc$cholIRF[,3,1], var_bs_bc$CholirsH1[,3,1], var_bs_bc$CholirsL1[,3,1]) +
   ggplot2::ylim(c(-0.8, 0.6)) +
-  ggplot2::labs(title = expression(paste(d^{HH}, "->", y)))
+  ggplot2::labs(title = latex2exp::TeX("$d^{HH} \\rightarrow y$"),
+                x = "Years after impulse",
+                y = NULL)
 
-g3 <- plot_irf(var_bc$cholIRF[,3,2], var_bs_bc$CholirsH1[,3,2], var_bs_bc$CholirsL1[,3,2]) +
+g1_3 <- plot_irf(var_bc$cholIRF[,3,2], var_bs_bc$CholirsH1[,3,2], var_bs_bc$CholirsL1[,3,2]) +
   ggplot2::ylim(c(-0.5, 0.4)) +
-  ggplot2::labs(title = expression(paste(d^{F}, "->", y)))
+  ggplot2::labs(title = latex2exp::TeX("$d^{F} \\rightarrow y"),
+                x = "Years after impulse",
+                y = NULL)
 
-ggsave("figure/Figure1_1.png", g1, width = 5, height = 6)
-ggsave("figure/Figure1_2.png", g2, width = 5, height = 6)
-ggsave("figure/Figure1_3.png", g3, width = 5, height = 6)
+g1 <- g1_1 + g1_2 + g1_3
+
+ggsave("figure/Figure1.png", g1, width = 10, height = 4)
 
 #####
 # table 2
@@ -121,7 +128,9 @@ table2 <- modelsummary:::modelsummary(
   stars = TRUE,
   gof_map = c("r2.within", "nobs", "FE:c", "FE:year"),
   add_rows = rows,
-  vcov = ~ year + CountryCode
+  vcov = ~ year + CountryCode,
+  
+  output = "output/table2.tex"
 )
 
 #####
@@ -180,7 +189,8 @@ table3 <- modelsummary:::modelsummary(
   coef_omit = ".*lnGDP_d1",
   gof_map = c("r2.within", "nobs"),
   add_rows = rows,
-  vcov = ~ year + CountryCode
+  vcov = ~ year + CountryCode,
+  output = "output/table3.tex"
 )
 
 #####
@@ -236,7 +246,8 @@ table4a <- modelsummary:::modelsummary(
   coef_omit = c(1, 4:7),
   gof_map = c("r2.within", "nobs"),
   add_rows = rows,
-  vcov = ~ year + CountryCode
+  vcov = ~ year + CountryCode,
+  output = "output/table4a.tex"
 )
 
 # table 4b
@@ -293,7 +304,8 @@ table4b <- modelsummary:::modelsummary(
   coef_omit = ".*lnGDP_d1",
   gof_map = c("r2.within", "nobs"),
   add_rows = rows,
-  vcov = ~ year + CountryCode
+  vcov = ~ year + CountryCode,
+  output = "output/table4b.tex"
 )
 
 #####  
@@ -357,5 +369,6 @@ table5 <- modelsummary::modelsummary(
   stars = TRUE,
   gof_map = c("r2.within", "nobs"),
   add_rows = rows,
-  vcov = ~ year + CountryCode
+  vcov = ~ year + CountryCode,
+  output = "output/table5.tex"
 )
